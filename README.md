@@ -13,7 +13,7 @@ simplify the build process. Once you have stack installed, simply run:
 If you are running stack for the first time, you may need to install a
 compatible Haskell toolchain first. Fortunately, stack makes this easy:
 
-`stack install`
+`stack setup`
 
 Be sure to run this from inside the checked-out repository to ensure you
 get the right version.
