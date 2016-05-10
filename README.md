@@ -26,8 +26,8 @@ from the pure server returns a JSON object as follows:
 
 ```
   { "name":    "bE15q1Z9c1b6OuC5Y6KGdEba"
-  , "secret":  "Y!%IqKHv}g3200TP?U`0pO7D)t-*'z;H*b&d4gag}KIiOY^]0fMalY/qyK&mdz7T"
-  , "pubKey":  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDcbdR5<snip>"
+  , "secret":  "Y!%IqKHv}g3200TP?U`0pO7D)t-*'z;H*b&d4gag}KIi[...]"
+  , "pubKey":  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDcbdR5[...]"
   }
 ```
 
