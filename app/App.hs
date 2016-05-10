@@ -9,13 +9,17 @@ import qualified Data.Aeson as Aeson
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as CT
 import qualified Data.Map.Strict as Map
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai 
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Options.Applicative as O
 import qualified System.Posix.Daemonize as Daemonize
+import qualified System.Posix.Process as Proc
 import Options.Applicative ((<>))
+import Data.List (intercalate, sort)
+import Data.List.Ordered (subset, minus')
 
 import qualified Rel.Cmd as Cmd
 import qualified Rel.FS as FS
@@ -88,12 +92,13 @@ app config waiRequest wRespond =
     logDebug e = runApp (Log.debug e) (AppState NoRequest config) >> return ()
     logError e = runApp (Log.error e) (AppState NoRequest config) >> return ()
 
-loadConfig :: App AppConfig
+loadConfig :: App ()
 loadConfig = 
   do
     cfgPath      <- getConfigPath
     current      <- getConfig
     c            <- safe $ C.load [ C.Optional cfgPath ]
+    keys         <- safe $ (sort . map T.unpack . HM.keys) `fmap` C.getMap c
     keystorePath <- getOr c "keystore.path"   $ keystorePath current 
     storageRoot  <- getOr c "repocache.path"  $ storageRoot current 
     listenPort   <- getOr c "server.port"     $ listenPort current 
@@ -106,23 +111,19 @@ loadConfig =
         { Log.path  = logPath
         , Log.level = logLevel } 
       }
-    getConfig
+    assert' (subset keys validKeys) $ "Unknown keys in configuration: " 
+      ++ (intercalate " " $ minus' keys validKeys)
   where
-    get cfg k     = safe $ C.lookup cfg k          -- no default
-    getOr cfg k v = safe $ C.lookupDefault v cfg k -- default
-
-cliOpts :: O.Parser CliOpts
-cliOpts = CliOpts
-     <$> O.strOption
-         ( O.long    "config-file"
-        <> O.short   'c'
-        <> O.value   "/etc/pure.conf"
-        <> O.metavar "FILE"
-        <> O.help    "Path to pure.conf" )
-     <*> O.switch
-         ( O.long  "daemon"
-        <> O.short 'd'
-        <> O.help  "Run as a background process (daemon mode)" )
+    get cfg k      = safe $ C.lookup cfg k          -- no default
+    getOr cfg k v  = safe $ C.lookupDefault v cfg k -- default
+    invalidKeys ks = show $ minus' ks validKeys
+    validKeys = sort
+      [ "keystore.path"
+      , "repocache.path"
+      , "server.port"
+      , "server.logFile"
+      , "server.logLevel"
+      , "server.pidFile" ]
 
 readCliOpts :: App ()
 readCliOpts = 
@@ -135,23 +136,53 @@ readCliOpts =
       ( O.fullDesc
      <> O.progDesc "Automatically push Github commits to a remote repository."
      <> O.header   "pure - push relay for Github repositories" )
+    cliOpts = CliOpts
+     <$> O.strOption
+         ( O.long    "config-file"
+        <> O.short   'c'
+        <> O.value   "/etc/pure.conf"
+        <> O.metavar "FILE"
+        <> O.help    "Path to pure.conf" )
+     <*> O.switch
+         ( O.long  "daemon"
+        <> O.short 'd'
+        <> O.help  "Run as a background process (daemon mode)" )
+
+daemonize :: App a -> App ()    
+daemonize x =
+  do st <- getState 
+     let r = runApp x st >> return ()
+     safe $ Daemonize.daemonize r
+     return () 
+
+initServer :: App ()
+initServer =
+  do c <- getConfig
+     Log.info "Starting up..."
+     safe $ Warp.run (listenPort c) (app c)
+
+runAsDaemon :: App ()
+runAsDaemon = 
+  do pidFile <- fmap pidFile getConfig
+     prohibit (FS.isFile pidFile) $ 
+       "PID file found at: " ++ pidFile ++ ". Is pure already running?"
+     daemonize $ 
+       (safe $ Proc.getProcessID >>= writeFile pidFile . show)
+       >> (Log.trace $ "Wrote PID file to " ++ pidFile)
+       >> initServer
+
+appMain :: App ()
+appMain = do
+  readCliOpts
+  loadConfig
+  config <- getConfig
+  if daemonMode config
+  then runAsDaemon
+  else initServer
 
 main :: IO ()
-main =
-  do
-    (_, r) <- runApp run (AppState NoRequest appConfig)
-    case r of
-      Ok _  -> return ()
-      Err e -> putStrLn $ "Unrecoverable error: " ++ e
-  where
-    server c = fmap (const ()) . flip runApp (AppState NoRequest c) $
-      do Log.info "Starting up..."
-         safe $ Warp.run (listenPort c) (app c)
-         return ()
-    run =
-      do readCliOpts
-         config <- loadConfig
-         if daemonMode config
-         then safe $ Daemonize.daemonize $ server config
-         else safe $ server config
+main = runApp appMain initState >>= \(_, r) ->
+  case r of Ok _  -> return ()
+            Err e -> putStrLn $ "Unrecoverable error: " ++ e
+  where initState = AppState NoRequest appConfig
 

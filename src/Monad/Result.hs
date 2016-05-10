@@ -73,6 +73,13 @@ class Monad m => ResultantMonad m where
   assert :: m Bool -> String -> m ()
   assert x msg = x >>= \r -> if r then return () else fail msg
 
+  assert' :: Bool -> String -> m ()
+  assert' True _ = return ()
+  assert' _ msg  = fail msg
+
+  prohibit :: m Bool -> String -> m ()
+  prohibit x msg = x >>= \r -> if r then fail msg else return ()
+
   -- Safely lift an IO value, converting exceptions to `Err`s.
   safe :: IO a -> m a
   safe x =

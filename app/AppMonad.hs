@@ -126,6 +126,9 @@ withConfig f = withState $ \(AppState _ c) -> f c
 getConfig :: App AppConfig
 getConfig = withConfig return
 
+getState :: App AppState
+getState = withState return
+
 withState :: (AppState -> App a) -> App a
 withState f = App $ \c -> runApp (f c) c
 
