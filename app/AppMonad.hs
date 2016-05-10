@@ -23,6 +23,7 @@ import Monad.Result
 import Monad.RelMonad
 import Util.Request
 
+
 data RequestState =
     NoRequest
   | Waiting (Wai.Response -> IO Wai.ResponseReceived)
@@ -140,9 +141,6 @@ updateConfig f = withConfig $ \c -> setConfig (f c)
 
 statePass :: (c -> IO (Result a)) -> c -> IO (c, Result a)
 statePass f c = (,) c `fmap` f c
-
-initState :: (Wai.Response -> IO Wai.ResponseReceived) -> AppConfig -> AppState
-initState resp conf = AppState (Waiting resp) conf
 
 respond :: H.Status -> H.ResponseHeaders -> BL8.ByteString -> App ()
 respond status headers body = do
