@@ -72,7 +72,7 @@ mkdirs dir =
 
 remove :: Rel m => FilePath -> m ()
 remove target =
-  Cmd.run "rm" [target] >> return ()
+  safe $ Directory.removeFile target 
 
 removeDirectory :: Rel m => FilePath -> m ()
 removeDirectory target =
