@@ -18,7 +18,7 @@ URL is used to specify the target and a **key identifier**. These URLs
 may be used on an ad-hoc basis, no other configuration is required. 
 
 
-## Command-line usage
+## Usage
 
 ```
 pure - push relay for Github repositories
@@ -31,6 +31,10 @@ Available options:
   -c,--config-file FILE    Path to pure.conf
   -d,--daemon              Run as a background process (daemon mode)
 ```
+
+If run as a service, *pure* supports socket activation via systemd for
+faster boot times and run-on-demand use cases. Sample unit files for
+systemd are provided in `/service`.
 
 ## Security
 
@@ -55,6 +59,23 @@ push repositories.
 Keys are cheap and not intended to last forever. It is recommended you
 decide on an expiry period and set up a cronjob to periodically remove
 old keys.
+
+## Configuration
+
+See the provided `pure.conf` for an example of how the configuration
+file is formatted. The following options are available:
+
+- `server.port` - The port to listen on. Default: `3000`
+- `server.logFile` - Where to write logs. Default: `/var/log/pure.log`
+- `server.logLevel` - Events with lower priorities than this will not
+  be logged. Possible values: `error`, `warn`, `info`, `debug`, `trace`.
+  Default: `info`
+- `server.pidFile` - Location of PID file to use when running in daemon
+  mode. Default: `/var/run/pure/pure.pid`.
+- `repocache.path` - Directory in which to store cloned repositories.
+  Default: `/var/run/pure/repos`
+- `keystore.path` - Directory in which to store secret keys. Default:
+  `/var/run/pure/keys`
 
 ## Compiling from source
 
