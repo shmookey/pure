@@ -148,6 +148,11 @@ statePass f c = (,) c `fmap` f c
 setRequestState :: RequestState -> App ()
 setRequestState x = updateState $ \(AppState _ c) -> AppState x c
 
+getSocket :: App Socket.Socket
+getSocket = withState $ \(AppState reqState _) ->
+  case reqState of Listening x -> return x
+                   _           -> fail "Not in listen mode"
+
 respond :: H.Status -> H.ResponseHeaders -> BL8.ByteString -> App ()
 respond status headers body = do
   Log.trace ("Sending response: " ++ (BL8.unpack body))

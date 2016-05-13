@@ -64,8 +64,7 @@ initServer =
   do c <- getConfig
      Log.info "Starting up..."
      sock <- createSocket (listenPort c)
-     _ <- safe $ Signals.installHandler Signals.sigINT (handleSIGINT sock) Nothing 
-     _ <- safe $ Signals.installHandler Signals.sigTERM (handleSIGTERM sock) Nothing 
+     installSignalHandlers
      safe $ Warp.runSettingsSocket Warp.defaultSettings sock (app c)
 
 runAsDaemon :: App ()
@@ -87,15 +86,25 @@ appMain = do
   then runAsDaemon
   else initServer
 
-handleSIGINT :: Socket.Socket -> Signals.Handler
-handleSIGINT sock = Signals.Catch $ 
-  do putStrLn "Process received SIGINT, shutting down."
-     Socket.close sock
-
-handleSIGTERM :: Socket.Socket -> Signals.Handler
-handleSIGTERM sock = Signals.Catch $ 
-  do putStrLn "Process received SIGTERM. Shutting down..."
-     Socket.close sock
+installSignalHandlers :: App ()
+installSignalHandlers =
+  do
+    state   <- getState
+    cleanup <- return $ \sig -> flip runApp state $
+      do Log.info $ "Process received " ++ sig ++ ", shutting down..."
+         pidFile  <- fmap pidFile getConfig
+         sock     <- getSocket
+         isDaemon <- getDaemonMode
+         safe $ Socket.close sock
+         if isDaemon 
+         then FS.remove pidFile
+         else return ()
+    handleSigINT  . Signals.Catch $ cleanup "SIGINT" >> return ()
+    handleSigTERM . Signals.Catch $ cleanup "SIGTERM" >> return ()
+    return ()
+  where
+    handleSigINT h  = safe $ Signals.installHandler Signals.sigINT h Nothing
+    handleSigTERM h = safe $ Signals.installHandler Signals.sigTERM h Nothing
 
 createSocket :: Int -> App Socket.Socket
 createSocket port = 
