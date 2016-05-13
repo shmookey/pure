@@ -18,6 +18,20 @@ URL is used to specify the target and a **key identifier**. These URLs
 may be used on an ad-hoc basis, no other configuration is required. 
 
 
+## Command-line usage
+
+```
+pure - push relay for Github repositories
+
+Usage: pure [-c|--config-file FILE] [-d|--daemon]
+  Automatically push Github commits to a remote repository.
+
+Available options:
+  -h,--help                Show this help text
+  -c,--config-file FILE    Path to pure.conf
+  -d,--daemon              Run as a background process (daemon mode)
+```
+
 ## Security
 
 To avoid the risk exposing access credentials in the webhook URL, pure
@@ -55,6 +69,11 @@ compatible Haskell toolchain first. Fortunately, stack makes this easy:
 `stack setup`
 
 Be sure to run this from inside the checked-out repository to ensure you
-get the right version.
+get the right version. Once you're all set up and successfully compiled,
+you can launch *pure* via stack:
 
+`stack exec pure -- -c pure.conf`
+
+Note that when you run *pure* this way its command-line arguments are
+separated from arguments to `stack exec` with a double dash.
 
