@@ -18,6 +18,25 @@ URL is used to specify the target and a **key identifier**. These URLs
 may be used on an ad-hoc basis, no other configuration is required. 
 
 
+## Quickstart
+
+1. Get *pure* up and running. For now this means compiling from source
+   and running it manually.
+2. Request a key from the keystore API: `curl myserver.com:3000/keys`.
+   Keep this information safe somewhere.
+3. Add the generated SSH public key to the list of authorized keys on
+   the destination repository host.
+4. Add the webhook to your Github repository under **Settings** / 
+   **Webhooks & Services**. The **Payload URL** will be of the form:
+   `http://myserver.com:3000/push/user@host/path/to/repo?key=<key_id>`
+   where `<key_id>` refers to the `name` of the key we just generated.
+   The **Secret** refers to the `secret` of our new key. You can leave
+   everything else as defaults.
+
+That's it! You're ready to go. Github will ping the webhook URL, and if
+it's accessible, future pushes to that repository will be pushed along
+to the destination you specified in the URL.
+
 ## Usage
 
 ```
