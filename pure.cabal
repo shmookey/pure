@@ -51,10 +51,12 @@ executable pure
                      , data-ordlist
                      , hdaemonize
                      , http-types
+                     , network
                      , optparse-applicative
                      , random
                      , split
                      , SHA
+                     , streaming-commons
                      , strict
                      , text
                      , unix

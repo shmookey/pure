@@ -11,6 +11,9 @@ import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Posix.Daemonize as Daemonize
 import qualified System.Posix.Process as Proc
+import qualified Data.Streaming.Network as NetStream
+import qualified Network.Socket as Socket
+import qualified System.Posix.Signals as Signals
 
 import qualified Rel.FS as FS
 import qualified Rel.Log as Log
@@ -59,7 +62,10 @@ initServer :: App ()
 initServer =
   do c <- getConfig
      Log.info "Starting up..."
-     safe $ Warp.run (listenPort c) (app c)
+     sock <- createSocket (listenPort c)
+     _ <- safe $ Signals.installHandler Signals.sigINT (handleSIGINT sock) Nothing 
+     _ <- safe $ Signals.installHandler Signals.sigTERM (handleSIGTERM sock) Nothing 
+     safe $ Warp.runSettingsSocket Warp.defaultSettings sock (app c)
 
 runAsDaemon :: App ()
 runAsDaemon = 
@@ -79,6 +85,22 @@ appMain = do
   if daemonMode config
   then runAsDaemon
   else initServer
+
+handleSIGINT :: Socket.Socket -> Signals.Handler
+handleSIGINT sock = Signals.Catch $ 
+  do putStrLn "Process received SIGINT, shutting down."
+     Socket.close sock
+
+handleSIGTERM :: Socket.Socket -> Signals.Handler
+handleSIGTERM sock = Signals.Catch $ 
+  do putStrLn "Process received SIGTERM. Shutting down..."
+     Socket.close sock
+
+createSocket :: Int -> App Socket.Socket
+createSocket port = 
+  do sock <- safe $ NetStream.bindPortTCP port "*4"
+     setRequestState $ Listening sock
+     return sock
 
 main :: IO ()
 main = runApp appMain initState >>= \(_, r) ->

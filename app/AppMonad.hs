@@ -13,6 +13,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import qualified Data.CaseInsensitive as CI
 import qualified Network.HTTP.Types as H 
+import qualified Network.Socket as Socket
 
 import qualified Rel.Cmd as Cmd
 import qualified Rel.Log as Log
@@ -26,6 +27,7 @@ import Util.Request
 
 data RequestState =
     NoRequest
+  | Listening Socket.Socket
   | Waiting (Wai.Response -> IO Wai.ResponseReceived)
   | Completed (IO Wai.ResponseReceived)
 
@@ -106,6 +108,7 @@ getRespond :: App (Wai.Response -> IO Wai.ResponseReceived)
 getRespond = withState $ \(AppState reqState _) ->
   case reqState of
     Waiting f   -> return f
+    Listening _ -> fail "In listening mode"
     NoRequest   -> fail "No active request"
     Completed _ -> fail "Request already completed"
 
@@ -142,11 +145,15 @@ updateConfig f = withConfig $ \c -> setConfig (f c)
 statePass :: (c -> IO (Result a)) -> c -> IO (c, Result a)
 statePass f c = (,) c `fmap` f c
 
+setRequestState :: RequestState -> App ()
+setRequestState x = updateState $ \(AppState _ c) -> AppState x c
+
 respond :: H.Status -> H.ResponseHeaders -> BL8.ByteString -> App ()
 respond status headers body = do
   Log.trace ("Sending response: " ++ (BL8.unpack body))
   withState $ \(AppState req c) ->
-    case req of NoRequest   -> fail "No active request."
+    case req of Listening _ -> fail "In listening mode."
+                NoRequest   -> fail "No active request."
                 Waiting f   -> setState $ AppState (Completed (f response)) c
                 Completed _ -> fail "Request already completed."
   where response = Wai.responseLBS status headers body
