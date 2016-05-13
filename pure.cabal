@@ -54,8 +54,9 @@ executable pure
                      , network
                      , optparse-applicative
                      , random
-                     , split
                      , SHA
+                     , socket-activation
+                     , split
                      , streaming-commons
                      , strict
                      , text

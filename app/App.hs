@@ -13,6 +13,7 @@ import qualified System.Posix.Daemonize as Daemonize
 import qualified System.Posix.Process as Proc
 import qualified Data.Streaming.Network as NetStream
 import qualified Network.Socket as Socket
+import qualified Network.Socket.Activation as SockAct
 import qualified System.Posix.Signals as Signals
 
 import qualified Rel.FS as FS
@@ -98,9 +99,14 @@ handleSIGTERM sock = Signals.Catch $
 
 createSocket :: Int -> App Socket.Socket
 createSocket port = 
-  do sock <- safe $ NetStream.bindPortTCP port "*4"
-     setRequestState $ Listening sock
-     return sock
+  do
+    pre  <- safe $ SockAct.getActivatedSockets
+    sock <- case pre of Just (x:_) -> return x
+                        _          -> newSocket
+    setRequestState $ Listening sock
+    return sock
+  where
+    newSocket = safe $ NetStream.bindPortTCP port "*4"
 
 main :: IO ()
 main = runApp appMain initState >>= \(_, r) ->
