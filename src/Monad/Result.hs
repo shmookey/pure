@@ -77,6 +77,12 @@ class Monad m => ResultantMonad m where
   assert' True _ = return ()
   assert' _ msg  = fail msg
 
+  -- | Perform an action if a condition fails, fail if not met after action
+  ensure :: m Bool -> m a -> String -> m ()
+  ensure cond act msg = cond >>= \pass -> 
+    if pass then return ()
+    else act >> assert cond msg
+
   prohibit :: m Bool -> String -> m ()
   prohibit x msg = x >>= \r -> if r then fail msg else return ()
 
