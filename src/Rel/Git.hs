@@ -170,7 +170,7 @@ open dir =
 clone :: Rel m => RepoUrl -> FilePath -> m Repository
 clone url dir =
   do
-    FS.mkdirs dir
+    FS.createDirectory' dir
     git' repo ["clone", formatRepoUrl url, "."]
     return repo
   where
@@ -180,7 +180,7 @@ clone url dir =
 mirror :: Rel m => RepoUrl -> FilePath -> m Repository
 mirror url dir =
   do
-    FS.mkdirs dir
+    FS.createDirectory' dir
     git' repo ["clone", "--mirror", formatRepoUrl url, "."]
     return repo
   where

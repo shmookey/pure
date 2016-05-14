@@ -9,9 +9,10 @@ module Rel.FS
   , copyDirectory
   , copyDirectoryContents
   , isFile
+  , isDirectory
   , remove
-  , mkdir
-  , mkdirs
+  , createDirectory
+  , createDirectory'
   , removeDirectory
   ) where
 
@@ -62,12 +63,15 @@ copyDirectoryContents from to =
 isFile :: Rel m => FilePath -> m Bool
 isFile = safe . Directory.doesFileExist 
 
-mkdir :: Rel m => FilePath -> m ()
-mkdir dir =
+isDirectory :: Rel m => FilePath -> m Bool
+isDirectory = safe . Directory.doesDirectoryExist 
+
+createDirectory :: Rel m => FilePath -> m ()
+createDirectory dir =
   Cmd.run "mkdir" [dir] >> return ()
 
-mkdirs :: Rel m => FilePath -> m ()
-mkdirs dir =
+createDirectory' :: Rel m => FilePath -> m ()
+createDirectory' dir =
   Cmd.run "mkdir" ["-p", dir] >> return ()
 
 remove :: Rel m => FilePath -> m ()
