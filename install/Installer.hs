@@ -1,5 +1,6 @@
 import Prelude hiding (fail)
 
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Options.Applicative as O
 import Options.Applicative ((<>))
@@ -42,13 +43,15 @@ install = readCliOpts >>= \options ->
 
     if not skipCopy
     then do
-      assert (FS.isFile "pure")
-        "pure executable must be in the current working directory."
+      binaryPath <- Cmd.run "stack" ["exec", "which", "pure"]
+      currentDir <- FS.cwd
+      assert' (List.isPrefixOf currentDir binaryPath)
+        "Couldn't find `pure` executable. Have you run `stack build`?"
       ensureDirectory binDir
       ensureDirectory confDir
       ensureDirectory repoDir
       ensureDirectory keyDir
-      FS.copy "pure" (binDir ++ "/pure")
+      FS.copy binaryPath (binDir ++ "/pure")
     else return ()
     
     if not skipSetup

@@ -8,6 +8,7 @@ module Rel.FS
   , copy
   , copyDirectory
   , copyDirectoryContents
+  , cwd
   , isFile
   , isDirectory
   , remove
@@ -59,6 +60,10 @@ copyDirectory from to =
 copyDirectoryContents :: Rel m => FilePath -> FilePath -> m ()
 copyDirectoryContents from to =
   Cmd.run "cp" ["-r", from ++ "/", to] >> return ()
+
+-- | Get the current working directory.
+cwd :: Rel m => m FilePath
+cwd = safe $ Directory.getCurrentDirectory
 
 isFile :: Rel m => FilePath -> m Bool
 isFile = safe . Directory.doesFileExist 
