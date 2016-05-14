@@ -7,6 +7,7 @@ module Rel.User
   , User(runUser)
   , createSystemUser
   , exists
+  , getUID
   ) where
 
 import Prelude hiding (fail)
@@ -46,4 +47,8 @@ exists x = recover (const False) $
 createSystemUser :: Rel m => String -> m ()
 createSystemUser x = 
   Cmd.run "useradd" ["--system", x] >> return ()
+
+-- | Get the effective UID of this process.
+getUID :: Rel m => m Int
+getUID = safe $ fromIntegral `fmap` PUser.getEffectiveUserID
 

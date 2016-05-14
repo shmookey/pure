@@ -27,14 +27,19 @@ data Options = Options
 install :: Installer ()
 install = readCliOpts >>= \options ->
   let root      = optRootDir options
-      binDir    = root ++ optBinDir      options
-      confDir   = root ++ optConfDir     options
-      repoDir   = root ++ optRepoDir     options
-      keyDir    = root ++ optKeyDir      options
-      user      = root ++ optServiceUser options
-      skipCopy  = root ++ optSkipCopy    options
-      skipSetup = root ++ optSkipSetup   options
+      binDir    = root ++ optBinDir  options
+      confDir   = root ++ optConfDir options
+      repoDir   = root ++ optRepoDir options
+      keyDir    = root ++ optKeyDir  options
+      user      = optServiceUser options
+      skipCopy  = optSkipCopy    options
+      skipSetup = optSkipSetup   options
   in do
+    uid <- User.getUID
+    if not (uid == 0)
+    then Log.warning "Not running as root. Setup may require elevated privileges."
+    else return ()
+
     if not skipCopy
     then do
       assert (FS.isFile "pure")
