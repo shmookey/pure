@@ -22,6 +22,7 @@ library
                      , Rel.Git
                      , Rel.Github
                      , Rel.Log
+                     , Rel.User
                      , Util.Request
   build-depends:       base >= 4.7 && < 5
                      , aeson
@@ -35,6 +36,7 @@ library
                      , strict
                      , text
                      , time
+                     , unix
                      , wai
   default-language:    Haskell2010
 
@@ -64,6 +66,21 @@ executable pure
                      , unordered-containers
                      , wai
                      , warp
+  default-language:    Haskell2010
+
+executable pure-install
+  hs-source-dirs:      install
+  main-is:             Installer.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base, pure
+                     , configurator
+                     , containers
+                     , data-ordlist
+                     , optparse-applicative
+                     , split
+                     , text
+                     , unix
+                     , unordered-containers
   default-language:    Haskell2010
 
 source-repository head
