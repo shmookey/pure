@@ -71,6 +71,9 @@ install = readCliOpts >>= \options ->
       ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
       configText <- safe $ configTemplate runDir shareDir repoDir keyDir
+      FS.setOwnerAndGroup runDir  user user
+      FS.setOwnerAndGroup repoDir user user
+      FS.setOwnerAndGroup keyDir  user user
       initSystem <- guessInitSystem
       case initSystem of 
         Systemd   -> systemdInstallUnit "pure.service"
@@ -119,8 +122,8 @@ main = runInstaller install defaultSettings >>= \(_, r) ->
             Err e -> putStrLn $ "Unrecoverable error: " ++ e
 
 defaultSettings = State
-  { fsConfig   = FS.Config {}
-  , userConfig = User.Config {}
+  { fsConfig   = FS.defaultConfig
+  , userConfig = User.defaultConfig
   , cmdConfig  = Cmd.Config
     { Cmd.envVars = Map.fromList [("PATH", "/usr/local/bin:/usr/bin:/bin")]
     }
