@@ -3,7 +3,7 @@ Description=Pure Github Push Relay
 Documentation=https://github.com/shmookey/pure
 
 [Service]
-ExecStart=/usr/bin/pure
+ExecStart=/usr/bin/pure -d
 Type=forking
 PIDFile=/var/run/pure/pure.pid
 User=pure
