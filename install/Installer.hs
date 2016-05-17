@@ -45,6 +45,9 @@ install = readCliOpts >>= \options ->
       user      = optServiceUser options
       skipCopy  = optSkipCopy    options
       skipSetup = optSkipSetup   options
+
+      mainBinary = "build/pure"
+      sshCompat  = "util/git-ssh-compat"
   in do
     uid <- User.getUID
     if not (uid == 0)
@@ -54,20 +57,16 @@ install = readCliOpts >>= \options ->
     if not skipCopy
     then do
       currentDir <- FS.cwd
-      mainBinary <- findMainBinary
-      sshCompat  <- return $ currentDir ++ "/util/git-ssh-compat"
       initSystem <- guessInitSystem
 
-      assert' (List.isPrefixOf currentDir mainBinary)
-        "Couldn't find `pure` executable. Have you run `stack build`?"
       ensureDirectory binDir
       ensureDirectory shareDir
       ensureDirectory runDir
       ensureDirectory confDir
       ensureDirectory repoDir
       ensureDirectory keyDir
-      FS.copy mainBinary $ binDir   ++ "/pure"
-      FS.copy sshCompat  $ shareDir ++ "/git-ssh-compat"
+      copy mainBinary $ binDir   ++ "/pure"
+      copy sshCompat  $ shareDir ++ "/git-ssh-compat"
 
       case initSystem of 
         Systemd   -> systemdInstallUnit "pure.service"
@@ -85,9 +84,11 @@ install = readCliOpts >>= \options ->
         "Failed to create service user: " ++ user
     else return ()
 
-findMainBinary :: Installer FilePath
-findMainBinary = FS.cwd >>=
-  Cmd.runIn "stack" ["exec", "--allow-different-user", "which", "pure"]
+copy :: FilePath -> FilePath -> Installer ()
+copy rel dst = FS.cwd >>= \cwd ->
+  let src = cwd ++ "/" ++ rel
+  in do FS.copy src dst
+        Log.info $ "Installed file: " ++ dst
 
 systemdInstallUnit :: FilePath -> Installer ()
 systemdInstallUnit x =
