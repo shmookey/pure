@@ -16,6 +16,7 @@ import InstallerMonad
 data Options = Options
   { optBinDir      :: FilePath
   , optShareDir    :: FilePath
+  , optRunDir      :: FilePath
   , optConfDir     :: FilePath
   , optRepoDir     :: FilePath
   , optKeyDir      :: FilePath
@@ -37,6 +38,7 @@ install = readCliOpts >>= \options ->
   let root      = optRootDir options
       binDir    = root ++ optBinDir   options
       shareDir  = root ++ optShareDir options
+      runDir    = root ++ optRunDir   options
       confDir   = root ++ optConfDir  options
       repoDir   = root ++ optRepoDir  options
       keyDir    = root ++ optKeyDir   options
@@ -60,6 +62,7 @@ install = readCliOpts >>= \options ->
         "Couldn't find `pure` executable. Have you run `stack build`?"
       ensureDirectory binDir
       ensureDirectory shareDir
+      ensureDirectory runDir
       ensureDirectory confDir
       ensureDirectory repoDir
       ensureDirectory keyDir
@@ -78,7 +81,7 @@ install = readCliOpts >>= \options ->
     
     if not skipSetup
     then do
-      ensure (User.exists user) (User.createSystemUser user) $
+      ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
     else return ()
 
@@ -144,6 +147,11 @@ readCliOpts =
          <> O.value   "usr/share"
          <> O.metavar "DIRECTORY"
          <> O.help    "Directory to store shared files (as in /usr/share)." )
+      <*> O.strOption
+          ( O.long    "run-dir"
+         <> O.value   "var/run/pure"
+         <> O.metavar "DIRECTORY"
+         <> O.help    "Directory to store runtime data." )
       <*> O.strOption
           ( O.long    "conf-dir"
          <> O.value   "etc"

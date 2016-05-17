@@ -44,9 +44,9 @@ exists :: Rel m => String -> m Bool
 exists x = recover (const False) $
   safe (PUser.getUserEntryForName x >> return True)
 
-createSystemUser :: Rel m => String -> m ()
-createSystemUser x = 
-  Cmd.run "useradd" ["--system", x] >> return ()
+createSystemUser :: Rel m => String -> FilePath -> m ()
+createSystemUser x dir = 
+  Cmd.run "useradd" ["--system", "--home-dir", dir, x] >> return ()
 
 -- | Get the effective UID of this process.
 getUID :: Rel m => m Int
