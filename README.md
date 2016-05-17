@@ -20,7 +20,7 @@ may be used on an ad-hoc basis, no other configuration is required.
 
 ## Quickstart
 
-1. Get *pure* up and running. For now this means compiling from source.
+1. Get *pure* up and running (see **Install**)
 2. Request a key from the keystore API: `curl myserver.com:3000/keys`.
    Keep this information safe somewhere.
 3. Add the generated SSH public key to the list of authorized keys on
@@ -38,9 +38,17 @@ to the destination you specified in the URL.
 
 ## Install
 
-To install, follow the instructions in *Compiling from Source* and run:
+The easiest way to get up and running is to compile from source and run
+`pure-install`:
 
-`stack exec pure-install`
+```
+git clone https://github.com/shmookey/pure
+cd pure
+make
+sudo ./build/pure-install
+```
+
+More information can be found under **Compiling from Source** below.
 
 By default, this installs the `pure` daemon and sets it up with a basic
 configuration to run as the `pure` user on boot. Currently the installer
@@ -114,7 +122,8 @@ file is formatted. The following options are available:
 ## Compiling from source
 
 *pure* uses [stack](http://docs.haskellstack.org/en/stable/README/) to
-simplify the build process. Once you have stack installed, simply run:
+simplify the build process. You can build with stack directly instead
+of using the `Makefile`. Once you have stack installed, simply run:
 
 `stack build`
 
