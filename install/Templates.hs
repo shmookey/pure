@@ -24,7 +24,7 @@ configTemplate runDir logFile shareDir repoDir keyDir =
     \ "
     runDir logFile shareDir repoDir keyDir
 
-systemdServiceTemplate binDir runDir =
+systemdServiceTemplate binDir runDir user =
   P.printf
     "[Unit] \n\
     \Description=Pure Github Push Relay \n\
@@ -34,11 +34,11 @@ systemdServiceTemplate binDir runDir =
     \ExecStart=%s/pure -d \n\
     \Type=forking \n\
     \PIDFile=%s/pure.pid \n\
-    \User=pure \n\
-    \Group=pure \n\
+    \User=%s \n\
+    \Group=%s \n\
     \ \n\
     \[Install] \n\
     \WantedBy=multi-user.target \n\
     \ "
-    binDir runDir
+    binDir runDir user user
 

@@ -87,25 +87,27 @@ install = readCliOpts >>= \options ->
       FS.setOwnerAndGroup keyDir  user user
       initSystem <- guessInitSystem
       case initSystem of 
-        Systemd   -> systemdInstallUnit "pure.service"
-                  >> systemdInstallUnit "pure.socket"
+        Systemd   -> setupSystemd binDir runDir user
         Launchd   -> Log.info "Init config not available for launchd!" 
         SysVInit  -> Log.info "Init config not available for sysvinit!" 
         Upstart   -> Log.info "Init config not available for upstart!" 
         OtherInit -> Log.info "Unable to determine init system."
 
+setupSystemd :: FilePath -> FilePath -> String -> Installer ()
+setupSystemd binDir runDir user =
+  let serviceText = systemdServiceTemplate binDir runDir user
+      serviceFile = "/etc/systemd/system/pure.service"
+      socketFile  = "/etc/systemd/system/pure.socket"
+  in do
+    FS.write serviceFile serviceText
+    FS.copy "service/pure.socket" socketFile
+    Log.info $ "Installed systemd units: pure.service pure.socket"
 
 copy :: FilePath -> FilePath -> Installer ()
 copy rel dst = FS.cwd >>= \cwd ->
   let src = cwd ++ "/" ++ rel
   in do FS.copy src dst
         Log.info $ "Installed file: " ++ dst
-
-systemdInstallUnit :: FilePath -> Installer ()
-systemdInstallUnit x =
-  FS.copy from to >> (Log.info $ "Installed systemd unit: " ++ x)
-  where from = "service/" ++ x
-        to   = "/etc/systemd/system/" ++ x
 
 ensureDirectory :: FilePath -> Installer ()
 ensureDirectory dir = 
