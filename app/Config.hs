@@ -22,6 +22,7 @@ import qualified Rel.FS as FS
 import qualified Rel.Git as Git
 import qualified Rel.Github as Github
 import qualified Rel.Log as Log
+import qualified Rel.User as User
 import Monad.Result
 import AppMonad
 
@@ -57,6 +58,7 @@ appConfig = AppConfig
     , Log.level     = Log.INFO
     , Log.print     = True
     }
+  , userConfig = User.defaultConfig
   }
 
 loadConfig :: App ()

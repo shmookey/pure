@@ -11,7 +11,7 @@ import qualified Rel.Log as Log
 import qualified Rel.User as User
 import Monad.Result
 import InstallerMonad
-
+import Templates
 
 data Options = Options
   { optBinDir      :: FilePath
@@ -50,15 +50,13 @@ install = readCliOpts >>= \options ->
       sshCompat  = "util/git-ssh-compat"
   in do
     uid <- User.getUID
-    if not (uid == 0)
-    then Log.warning "Not running as root. Setup may require elevated privileges."
-    else return ()
+    if uid == 0 then return ()
+    else Log.warning "Not running as root. Setup may require elevated privileges."
 
-    if not skipCopy
-    then do
+    if skipCopy then return ()
+    else do
       currentDir <- FS.cwd
       initSystem <- guessInitSystem
-
       ensureDirectory binDir
       ensureDirectory shareDir
       ensureDirectory runDir
@@ -67,7 +65,13 @@ install = readCliOpts >>= \options ->
       ensureDirectory keyDir
       copy mainBinary $ binDir   ++ "/pure"
       copy sshCompat  $ shareDir ++ "/git-ssh-compat"
-
+    
+    if skipSetup then return ()
+    else do
+      ensure (User.exists user) (User.createSystemUser user runDir) $
+        "Failed to create service user: " ++ user
+      configText <- safe $ configTemplate runDir shareDir repoDir keyDir
+      initSystem <- guessInitSystem
       case initSystem of 
         Systemd   -> systemdInstallUnit "pure.service"
                   >> systemdInstallUnit "pure.socket"
@@ -75,14 +79,7 @@ install = readCliOpts >>= \options ->
         SysVInit  -> Log.info "Init config not available for sysvinit!" 
         Upstart   -> Log.info "Init config not available for upstart!" 
         OtherInit -> Log.info "Unable to determine init system."
- 
-    else return ()
-    
-    if not skipSetup
-    then do
-      ensure (User.exists user) (User.createSystemUser user runDir) $
-        "Failed to create service user: " ++ user
-    else return ()
+
 
 copy :: FilePath -> FilePath -> Installer ()
 copy rel dst = FS.cwd >>= \cwd ->

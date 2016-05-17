@@ -8,20 +8,24 @@ module Rel.FS
   , copy
   , copyDirectory
   , copyDirectoryContents
+  , createDirectory
+  , createDirectory'
   , cwd
   , isFile
   , isDirectory
   , remove
-  , createDirectory
-  , createDirectory'
   , removeDirectory
+  , touch
   ) where
 
 import Prelude hiding (fail)
 import qualified System.Directory as Directory
+import qualified Data.Time.Clock as Clock
+import qualified System.Posix.Files as Files
 
 import qualified Rel.Log as Log
 import qualified Rel.Cmd as Cmd
+import qualified Rel.User as User
 import Monad.Result
 
 -- FS monad
@@ -45,7 +49,12 @@ instance ResultantMonad FS where
   point x        = FS $ \_ -> x
   mapResult f ma = FS $ \c -> f `fmap` runFS ma c
 
-type Rel m = (ResultR FS m, ResultR Log.Log m, ResultR Cmd.Cmd m)
+type Rel m = 
+  ( ResultR FS        m
+  , ResultR Log.Log   m
+  , ResultR Cmd.Cmd   m
+  , ResultR User.User m
+  )
 
 -- File ops
 
@@ -86,4 +95,14 @@ remove target =
 removeDirectory :: Rel m => FilePath -> m ()
 removeDirectory target =
   Cmd.run "rm" ["-r", target] >> return ()
+
+setOwnerAndGroup :: Rel m => FilePath -> String -> String -> m ()
+setOwnerAndGroup file username groupname =
+  do userid  <- User.lookupUser username
+     groupid <- User.lookupGroup groupname
+     safe $ Files.setOwnerAndGroup file userid groupid
+
+touch :: Rel m => FilePath -> m ()
+touch x = safe $ 
+  appendFile x "" >> Clock.getCurrentTime >>= Directory.setModificationTime x
 

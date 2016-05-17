@@ -11,6 +11,7 @@ packages:
 extra-deps:
 - process-1.4.2.0
 - socket-activation-0.1.0.1
+- directory-1.2.6.3
 
 # Override default flag values for local packages and extra-deps
 flags: {}

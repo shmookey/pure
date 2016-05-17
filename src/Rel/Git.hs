@@ -40,6 +40,7 @@ import Data.Maybe (maybe)
 import qualified Rel.Cmd as Cmd
 import qualified Rel.FS as FS
 import qualified Rel.Log as Log
+import qualified Rel.User as User
 import Monad.Result
 import Monad.RelMonad
 
@@ -76,7 +77,13 @@ instance ResultantMonad Git where
     (st', rx) <- runGit ma st
     return (st', f rx)
 
-type Rel m = (ResultR Git m, ResultR Log.Log m, ResultR Cmd.Cmd m, ResultR FS.FS m)
+type Rel m = 
+  ( ResultR Git       m
+  , ResultR Log.Log   m
+  , ResultR Cmd.Cmd   m
+  , ResultR FS.FS     m
+  , ResultR User.User m
+  )
 
 
 -- ---------------------------------------------------------------------

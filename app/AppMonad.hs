@@ -20,6 +20,7 @@ import qualified Rel.Log as Log
 import qualified Rel.FS as FS
 import qualified Rel.Git as Git
 import qualified Rel.Github as Github
+import qualified Rel.User as User
 import Monad.Result
 import Monad.RelMonad
 import Util.Request
@@ -48,6 +49,7 @@ data AppConfig = AppConfig
   , gitConfig    :: Git.Config
   , githubConfig :: Github.Config
   , logConfig    :: Log.Config
+  , userConfig   :: User.Config
   }
 
 data App a = App { runApp :: AppState -> IO (AppState, Result a) }
@@ -90,6 +92,9 @@ instance RelMonad Github.Github App where
 instance RelMonad Cmd.Cmd App where
   rPoint x = App $ \st -> do (c, rx) <- Cmd.runCmd x (cmdConfig $ config st)
                              return $ (st { config = (config st) { cmdConfig = c } }, rx)
+
+instance RelMonad User.User App where
+  rPoint x = App . statePass $ User.runUser x . userConfig . config
 
 
 getStorageRoot :: App FilePath

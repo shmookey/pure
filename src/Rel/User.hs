@@ -6,12 +6,16 @@ module Rel.User
   ( Config(Config)
   , User(runUser)
   , createSystemUser
+  , defaultConfig
   , exists
   , getUID
+  , lookupUser
+  , lookupGroup
   ) where
 
 import Prelude hiding (fail)
 import qualified System.Posix.User as PUser
+import qualified System.Posix.Types as PTypes
 
 import qualified Rel.Cmd as Cmd
 import qualified Rel.Log as Log
@@ -39,6 +43,8 @@ instance ResultantMonad User where
 
 type Rel m = (ResultR User m, ResultR Cmd.Cmd m, ResultR Log.Log m)
 
+defaultConfig :: Config
+defaultConfig = Config {}
 
 exists :: Rel m => String -> m Bool
 exists x = recover (const False) $
@@ -51,4 +57,10 @@ createSystemUser x dir =
 -- | Get the effective UID of this process.
 getUID :: Rel m => m Int
 getUID = safe $ fromIntegral `fmap` PUser.getEffectiveUserID
+
+lookupUser :: Rel m => String -> m PTypes.UserID
+lookupUser x = safe $ PUser.userID `fmap` PUser.getUserEntryForName x
+
+lookupGroup :: Rel m => String -> m PTypes.GroupID
+lookupGroup x = safe $ PUser.groupID `fmap` PUser.getGroupEntryForName x
 
