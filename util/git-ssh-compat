@@ -1,0 +1,7 @@
+#!/bin/sh
+# git-ssh-compat -- ssh compatibility script for git <2.3
+# This script simply wraps $GIT_SSH_COMMAND
+
+set -e
+$GIT_SSH_COMMAND $@
+

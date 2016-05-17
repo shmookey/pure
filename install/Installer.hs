@@ -15,6 +15,7 @@ import InstallerMonad
 
 data Options = Options
   { optBinDir      :: FilePath
+  , optShareDir    :: FilePath
   , optConfDir     :: FilePath
   , optRepoDir     :: FilePath
   , optKeyDir      :: FilePath
@@ -34,10 +35,11 @@ data InitSystem =
 install :: Installer ()
 install = readCliOpts >>= \options ->
   let root      = optRootDir options
-      binDir    = root ++ optBinDir  options
-      confDir   = root ++ optConfDir options
-      repoDir   = root ++ optRepoDir options
-      keyDir    = root ++ optKeyDir  options
+      binDir    = root ++ optBinDir   options
+      shareDir  = root ++ optShareDir options
+      confDir   = root ++ optConfDir  options
+      repoDir   = root ++ optRepoDir  options
+      keyDir    = root ++ optKeyDir   options
       user      = optServiceUser options
       skipCopy  = optSkipCopy    options
       skipSetup = optSkipSetup   options
@@ -49,17 +51,20 @@ install = readCliOpts >>= \options ->
 
     if not skipCopy
     then do
-      binaryPath <- Cmd.run "stack" ["exec", "which", "pure"]
       currentDir <- FS.cwd
+      mainBinary <- Cmd.run "stack" ["exec", "which", "pure"]
+      sshCompat  <- return $ currentDir ++ "/util/git-ssh-compat"
       initSystem <- guessInitSystem
 
-      assert' (List.isPrefixOf currentDir binaryPath)
+      assert' (List.isPrefixOf currentDir mainBinary)
         "Couldn't find `pure` executable. Have you run `stack build`?"
       ensureDirectory binDir
+      ensureDirectory shareDir
       ensureDirectory confDir
       ensureDirectory repoDir
       ensureDirectory keyDir
-      FS.copy binaryPath (binDir ++ "/pure")
+      FS.copy mainBinary $ binDir   ++ "/pure"
+      FS.copy sshCompat  $ shareDir ++ "/git-ssh-compat"
 
       case initSystem of 
         Systemd   -> systemdInstallUnit "pure.service"
@@ -134,6 +139,11 @@ readCliOpts =
          <> O.value   "usr/bin"
          <> O.metavar "DIRECTORY"
          <> O.help    "Directory to store `pure` executable." )
+      <*> O.strOption
+          ( O.long    "share-dir"
+         <> O.value   "usr/share"
+         <> O.metavar "DIRECTORY"
+         <> O.help    "Directory to store shared files (as in /usr/share)." )
       <*> O.strOption
           ( O.long    "conf-dir"
          <> O.value   "etc"

@@ -47,14 +47,15 @@ appConfig = AppConfig
     { Cmd.envVars = Map.fromList [ ("PATH", "/usr/local/bin:/usr/bin:/bin") ]
     }
   , gitConfig    = Git.Config
-    { Git.identity = Nothing
+    { Git.identity  = Nothing
+    , Git.sshClient = "/usr/share/pure/git-ssh-compat"
     }
   , fsConfig     = FS.Config {}
   , githubConfig = Github.Config {}
   , logConfig    = Log.Config
-    { Log.path  = Nothing
-    , Log.level = Log.INFO
-    , Log.print = True
+    { Log.path      = Nothing
+    , Log.level     = Log.INFO
+    , Log.print     = True
     }
   }
 
@@ -65,17 +66,20 @@ loadConfig =
     current      <- getConfig
     c            <- safe $ C.load [ C.Optional cfgPath ]
     keys         <- safe $ (sort . map T.unpack . HM.keys) `fmap` C.getMap c
-    keystorePath <- getOr c "keystore.path"   $ keystorePath current 
-    storageRoot  <- getOr c "repocache.path"  $ storageRoot current 
-    listenPort   <- getOr c "server.port"     $ listenPort current 
-    pidFile      <- getOr c "server.pidFile"  $ pidFile current 
+    keystorePath <- getOr c "keystore.path"    $ keystorePath current 
+    storageRoot  <- getOr c "repocache.path"   $ storageRoot current 
+    listenPort   <- getOr c "server.port"      $ listenPort current 
+    pidFile      <- getOr c "server.pidFile"   $ pidFile current 
+    logLevel     <- getOr c "server.logLevel"  . Log.level     $ logConfig current
+    gitSsh       <- getOr c "server.sshClient" . Git.sshClient $ gitConfig current 
     logPath      <- get   c "server.logFile"
-    logLevel     <- getOr c "server.logLevel" . Log.level $ logConfig current
     setConfig $ current 
       { storageRoot, keystorePath, pidFile, listenPort
       , logConfig = (logConfig current) 
-        { Log.path  = logPath
-        , Log.level = logLevel } 
+        { Log.path      = logPath
+        , Log.level     = logLevel }
+      , gitConfig = (gitConfig current)
+        { Git.sshClient = gitSsh }
       }
     assert' (subset keys validKeys) $ "Unknown keys in configuration: " 
       ++ (intercalate " " $ minus' keys validKeys)
@@ -88,7 +92,9 @@ loadConfig =
       , "server.port"
       , "server.logFile"
       , "server.logLevel"
-      , "server.pidFile" ]
+      , "server.pidFile"
+      , "server.sshClient"
+      ]
 
 readCliOpts :: App ()
 readCliOpts = 

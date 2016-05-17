@@ -33,8 +33,9 @@ module Rel.Git
   ) where
 
 import Prelude hiding (fail)
-import Data.List (elemIndex)
+import Data.List (elemIndex, intercalate)
 import Data.List.Split (splitOn)
+import Data.Maybe (maybe)
 
 import qualified Rel.Cmd as Cmd
 import qualified Rel.FS as FS
@@ -46,7 +47,10 @@ import Monad.RelMonad
 -- ---------------------------------------------------------------------
 -- Git monad
 
-data Config = Config { identity :: Maybe FilePath }
+data Config = Config
+  { identity  :: Maybe FilePath
+  , sshClient :: FilePath
+  }
 
 data Git a = Git { runGit :: Config -> IO (Config, Result a) }
 
@@ -116,6 +120,9 @@ setIdentity x = updateConfig (\c -> c { identity = x })
 
 withConfig :: Rel m => (Config -> Git a) -> m a
 withConfig f = rPoint . Git $ \c -> runGit (f c) c
+
+getConfig :: Rel m => m Config
+getConfig = rPoint . Git $ \c -> return (c, return c)
 
 updateConfig :: Rel m => (Config -> Config) -> m ()
 updateConfig f = rPoint . Git $ \c -> return (f c, return ())
@@ -201,19 +208,16 @@ push repo remote srcRef dstRef =
 
 -- | Run a git command.
 git :: Rel m => Repository -> [String] -> m String
-git repo args =
-  do 
-    key <- keyOpt `fmap` getIdentity
-    dir <- getRoot repo
-    env <- envVars key
-    Cmd.usingEnv env $ Cmd.runIn "git" args dir
-  where 
-    keyOpt (Just x) = "-i " ++ x
-    keyOpt Nothing  = ""
-    envVars k = return
-      [ ("GIT_TERMINAL_PROMPT", "0")
-      , ("GIT_SSH_COMMAND",     "ssh -oBatchMode=yes -oStrictHostKeyChecking=no " ++ k) -- TODO: dangerous!
-      ]
+git repo args = getConfig >>= \config ->
+  let
+    key    = maybe "" ("-i " ++) (identity config)
+    client = sshClient config
+    opts   = "-oBatchMode=yes -oStrictHostKeyChecking=no" -- TODO: fix me!!
+    cmd    = intercalate " " ["ssh", opts, key]
+    env    = [ ( "GIT_TERMINAL_PROMPT", "0"    )
+             , ( "GIT_SSH_COMMAND"    , cmd    )
+             , ( "GIT_SSH"            , client ) ]
+  in getRoot repo >>= Cmd.usingEnv env . Cmd.runIn "git" args
 
 -- | Run a git command, discarding the output.
 git' :: Rel m => Repository -> [String] -> m ()
