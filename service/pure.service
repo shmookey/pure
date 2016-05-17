@@ -6,6 +6,8 @@ Documentation=https://github.com/shmookey/pure
 ExecStart=/usr/bin/pure
 Type=forking
 PIDFile=/var/run/pure/pure.pid
+User=pure
+Group=pure
 
 [Install]
 WantedBy=multi-user.target
