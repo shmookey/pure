@@ -16,6 +16,7 @@ module Rel.FS
   , isDirectory
   , remove
   , removeDirectory
+  , setOwnerAndGroup
   , touch
   ) where
 
