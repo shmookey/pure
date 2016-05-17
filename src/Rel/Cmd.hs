@@ -24,8 +24,9 @@ import Data.List (intercalate)
 import Data.List.Split (splitOn)
 import qualified Data.Map.Strict as Map
 
-import System.IO.Strict (hGetContents)
 import qualified System.Process as Proc
+import qualified System.Directory as Directory
+import System.IO.Strict (hGetContents)
 import System.Exit (ExitCode(..))
 
 import qualified Rel.Log as Log
@@ -94,7 +95,8 @@ updateConfig f = rPoint . Cmd $ \c -> return (f c, return ())
 
 run :: Rel m => String -> [String] -> m String
 run cmd args =
-  command (Proc.RawCommand cmd args) "/"
+  safe Directory.getCurrentDirectory
+  >>= runIn cmd args
 
 runIn :: Rel m => String -> [String] -> FilePath -> m String
 runIn cmd args dir =
