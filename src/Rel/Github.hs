@@ -71,6 +71,9 @@ instance FromJSON Repository where
 instance FromJSON Git.Ref where
   parseJSON = withText "ref" (return . Git.parseRef . Text.unpack)
 
+defaultConfig :: Config
+defaultConfig = Config {}
+
 decodeRequest :: ResultR Github m => ByteString -> m PushEvent
 decodeRequest = fromEither . eitherDecode
 

@@ -11,6 +11,7 @@ module Rel.FS
   , createDirectory
   , createDirectory'
   , cwd
+  , defaultConfig
   , isFile
   , isDirectory
   , remove
@@ -55,6 +56,10 @@ type Rel m =
   , ResultR Cmd.Cmd   m
   , ResultR User.User m
   )
+
+
+defaultConfig :: Config
+defaultConfig = Config {}
 
 -- File ops
 

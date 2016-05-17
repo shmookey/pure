@@ -51,14 +51,14 @@ appConfig = AppConfig
     { Git.identity  = Nothing
     , Git.sshClient = "/usr/share/pure/git-ssh-compat"
     }
-  , fsConfig     = FS.Config {}
-  , githubConfig = Github.Config {}
   , logConfig    = Log.Config
     { Log.path      = Nothing
     , Log.level     = Log.INFO
     , Log.print     = True
     }
-  , userConfig = User.defaultConfig
+  , fsConfig     = FS.defaultConfig
+  , githubConfig = Github.defaultConfig
+  , userConfig   = User.defaultConfig
   }
 
 loadConfig :: App ()
