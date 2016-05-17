@@ -21,6 +21,7 @@ data Options = Options
   , optRepoDir     :: FilePath
   , optKeyDir      :: FilePath
   , optRootDir     :: FilePath
+  , optLogFile     :: FilePath
   , optServiceUser :: String
   , optSkipCopy    :: Bool
   , optSkipSetup   :: Bool
@@ -42,6 +43,7 @@ install = readCliOpts >>= \options ->
       confDir   = root ++ optConfDir  options
       repoDir   = root ++ optRepoDir  options
       keyDir    = root ++ optKeyDir   options
+      logFile   = root ++ optLogFile  options
       user      = optServiceUser options
       skipCopy  = optSkipCopy    options
       skipSetup = optSkipSetup   options
@@ -71,6 +73,8 @@ install = readCliOpts >>= \options ->
       ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
       configText <- safe $ configTemplate runDir shareDir repoDir keyDir
+      FS.touch logFile
+      FS.setOwnerAndGroup logFile user user
       FS.setOwnerAndGroup runDir  user user
       FS.setOwnerAndGroup repoDir user user
       FS.setOwnerAndGroup keyDir  user user
@@ -177,6 +181,11 @@ readCliOpts =
          <> O.value   "/"
          <> O.metavar "DIRECTORY"
          <> O.help    "Override root directory (e.g. for packaging)" )
+      <*> O.strOption
+          ( O.long    "log-file"
+         <> O.value   "var/log/pure.log"
+         <> O.metavar "FILE"
+         <> O.help    "Where `pure` should write logs." )
       <*> O.strOption
           ( O.long    "service-user"
          <> O.value   "pure"
