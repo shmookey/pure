@@ -72,7 +72,7 @@ install = readCliOpts >>= \options ->
     else do
       ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
-      configText <- safe $ configTemplate runDir shareDir repoDir keyDir
+      configText <- safe $ configTemplate runDir logFile shareDir repoDir keyDir
       FS.touch logFile
       FS.setOwnerAndGroup logFile user user
       FS.setOwnerAndGroup runDir  user user
