@@ -24,6 +24,12 @@ data Options = Options
   , optSkipSetup   :: Bool
   }
 
+data InitSystem = 
+    Systemd 
+  | SysVInit 
+  | Upstart 
+  | Launchd 
+  | OtherInit
 
 install :: Installer ()
 install = readCliOpts >>= \options ->
@@ -45,6 +51,8 @@ install = readCliOpts >>= \options ->
     then do
       binaryPath <- Cmd.run "stack" ["exec", "which", "pure"]
       currentDir <- FS.cwd
+      initSystem <- guessInitSystem
+
       assert' (List.isPrefixOf currentDir binaryPath)
         "Couldn't find `pure` executable. Have you run `stack build`?"
       ensureDirectory binDir
@@ -52,6 +60,15 @@ install = readCliOpts >>= \options ->
       ensureDirectory repoDir
       ensureDirectory keyDir
       FS.copy binaryPath (binDir ++ "/pure")
+
+      case initSystem of 
+        Systemd   -> systemdInstallUnit "pure.service"
+                  >> systemdInstallUnit "pure.socket"
+        Launchd   -> Log.info "Init config not available for launchd!" 
+        SysVInit  -> Log.info "Init config not available for sysvinit!" 
+        Upstart   -> Log.info "Init config not available for upstart!" 
+        OtherInit -> Log.info "Unable to determine init system."
+ 
     else return ()
     
     if not skipSetup
@@ -60,13 +77,31 @@ install = readCliOpts >>= \options ->
         "Failed to create service user: " ++ user
     else return ()
 
-    return ()
+systemdInstallUnit :: FilePath -> Installer ()
+systemdInstallUnit x =
+  FS.copy from to >> (Log.info $ "Installed systemd unit: " ++ x)
+  where from = "service/" ++ x
+        to   = "/etc/systemd/system/" ++ x
 
 ensureDirectory :: FilePath -> Installer ()
 ensureDirectory dir = 
   ensure (FS.isDirectory dir)
          (FS.createDirectory' dir)
          ("Failed to create directory: " ++ dir)
+
+guessInitSystem :: Installer InitSystem
+guessInitSystem = 
+  do
+    hasSystemd  <- FS.isDirectory "/usr/lib/systemd"
+    hasUpstart  <- FS.isDirectory "/usr/share/upstart"
+    hasSysVInit <- FS.isDirectory "/etc/init.d"
+    hasLaunchd  <- FS.isFile "/sbin/launchd"
+    return $
+      if hasSystemd then Systemd
+      else if hasLaunchd then Launchd
+      else if hasUpstart then Upstart
+      else if hasSysVInit then SysVInit
+      else OtherInit
 
 main :: IO ()
 main = runInstaller install defaultSettings >>= \(_, r) ->
