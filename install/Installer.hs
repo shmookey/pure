@@ -102,6 +102,9 @@ setupSystemd binDir runDir user =
     FS.write serviceFile serviceText
     FS.copy "service/pure.socket" socketFile
     Log.info $ "Installed systemd units: pure.service pure.socket"
+    _ <- Cmd.run "systemctl" ["daemon-reload"]
+    _ <- Cmd.run "systemctl" ["start", "pure"]
+    return ()
 
 copy :: FilePath -> FilePath -> Installer ()
 copy rel dst = FS.cwd >>= \cwd ->
