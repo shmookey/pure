@@ -8,18 +8,18 @@ configTemplate runDir logFile shareDir repoDir keyDir =
     \ \n\
     \server { \n\
     \  port      = 3000 \n\
-    \  pidFile   = '%s/pure.pid' \n\
-    \  logFile   = '%s' \n\
-    \  logLevel  = 'info' \n\
-    \  sshClient = '%s/git-ssh-compat' \n\
+    \  pidFile   = \"%s/pure.pid\" \n\
+    \  logFile   = \"%s\" \n\
+    \  logLevel  = \"info\" \n\
+    \  sshClient = \"%s/git-ssh-compat\" \n\
     \} \n\
     \ \n\
     \repocache { \n\
-    \  path = '%s' \n\
+    \  path = \"%s\" \n\
     \} \n\
     \ \n\
     \keystore { \n\
-    \  path = '%s' \n\
+    \  path = \"%s\" \n\
     \} \n\
     \ "
     runDir logFile shareDir repoDir keyDir
