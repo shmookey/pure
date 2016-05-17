@@ -51,7 +51,7 @@ type Rel m = (ResultR FS m, ResultR Log.Log m, ResultR Cmd.Cmd m)
 
 copy :: Rel m => FilePath -> FilePath -> m ()
 copy from to =
-  Cmd.run "cp" [from, to] >> return ()
+  safe $ Directory.copyFile from to
 
 copyDirectory :: Rel m => FilePath -> FilePath -> m ()
 copyDirectory from to =
