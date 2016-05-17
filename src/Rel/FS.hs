@@ -18,6 +18,7 @@ module Rel.FS
   , removeDirectory
   , setOwnerAndGroup
   , touch
+  , write
   ) where
 
 import Prelude hiding (fail)
@@ -111,4 +112,7 @@ setOwnerAndGroup file username groupname =
 touch :: Rel m => FilePath -> m ()
 touch x = safe $ 
   appendFile x "" >> Clock.getCurrentTime >>= Directory.setModificationTime x
+
+write :: Rel m => FilePath -> String -> m ()
+write file contents = safe $ writeFile file contents
 
