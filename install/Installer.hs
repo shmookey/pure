@@ -93,6 +93,8 @@ install = readCliOpts >>= \options ->
         Upstart   -> Log.info "Init config not available for upstart!" 
         OtherInit -> Log.info "Unable to determine init system."
 
+    Log.info "Installation complete."
+
 setupSystemd :: FilePath -> FilePath -> String -> Installer ()
 setupSystemd binDir runDir user =
   let serviceText = systemdServiceTemplate binDir runDir user
@@ -104,6 +106,7 @@ setupSystemd binDir runDir user =
     Log.info $ "Installed systemd units: pure.service pure.socket"
     _ <- Cmd.run "systemctl" ["daemon-reload"]
     _ <- Cmd.run "systemctl" ["start", "pure"]
+    Log.info $ "Pure is up and running!"
     return ()
 
 copy :: FilePath -> FilePath -> Installer ()
