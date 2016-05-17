@@ -20,8 +20,7 @@ may be used on an ad-hoc basis, no other configuration is required.
 
 ## Quickstart
 
-1. Get *pure* up and running. For now this means compiling from source
-   and running it manually.
+1. Get *pure* up and running. For now this means compiling from source.
 2. Request a key from the keystore API: `curl myserver.com:3000/keys`.
    Keep this information safe somewhere.
 3. Add the generated SSH public key to the list of authorized keys on
@@ -36,6 +35,22 @@ may be used on an ad-hoc basis, no other configuration is required.
 That's it! You're ready to go. Github will ping the webhook URL, and if
 it's accessible, future pushes to that repository will be pushed along
 to the destination you specified in the URL.
+
+## Install
+
+To install, follow the instructions in *Compiling from Source* and run:
+
+`stack exec pure-install`
+
+By default, this installs the `pure` daemon and sets it up with a basic
+configuration to run as the `pure` user on boot. Currently the installer
+only supports the systemd init system. The directory `/var/run/pure` is
+created to hold the keystore and repository cache.
+
+Installation options may be specified on the command line. The options
+available can be viewed with:
+
+`stack exec pure-install -- --help`
 
 ## Usage
 
