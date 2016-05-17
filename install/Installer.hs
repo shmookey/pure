@@ -54,7 +54,7 @@ install = readCliOpts >>= \options ->
     if not skipCopy
     then do
       currentDir <- FS.cwd
-      mainBinary <- Cmd.run "stack" ["exec", "which", "pure"]
+      mainBinary <- findMainBinary
       sshCompat  <- return $ currentDir ++ "/util/git-ssh-compat"
       initSystem <- guessInitSystem
 
@@ -84,6 +84,10 @@ install = readCliOpts >>= \options ->
       ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
     else return ()
+
+findMainBinary :: Installer FilePath
+findMainBinary = FS.cwd >>=
+  Cmd.runIn "stack" ["exec", "--allow-different-user", "which", "pure"]
 
 systemdInstallUnit :: FilePath -> Installer ()
 systemdInstallUnit x =
