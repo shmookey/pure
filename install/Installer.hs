@@ -36,20 +36,22 @@ data InitSystem =
 
 install :: Installer ()
 install = readCliOpts >>= \options ->
-  let root      = optRootDir options
-      binDir    = root ++ optBinDir   options
-      shareDir  = root ++ optShareDir options
-      runDir    = root ++ optRunDir   options
-      confDir   = root ++ optConfDir  options
-      repoDir   = root ++ optRepoDir  options
-      keyDir    = root ++ optKeyDir   options
-      logFile   = root ++ optLogFile  options
-      user      = optServiceUser options
-      skipCopy  = optSkipCopy    options
-      skipSetup = optSkipSetup   options
+  let root       = optRootDir options
+      binDir     = root ++ optBinDir   options
+      shareDir   = root ++ optShareDir options
+      runDir     = root ++ optRunDir   options
+      confDir    = root ++ optConfDir  options
+      repoDir    = root ++ optRepoDir  options
+      keyDir     = root ++ optKeyDir   options
+      logFile    = root ++ optLogFile  options
+      user       = optServiceUser options
+      skipCopy   = optSkipCopy    options
+      skipSetup  = optSkipSetup   options
+      configFile = confDir ++ "/pure.conf"
 
       mainBinary = "build/pure"
       sshCompat  = "util/git-ssh-compat"
+      configText = configTemplate runDir logFile shareDir repoDir keyDir
   in do
     uid <- User.getUID
     if uid == 0 then return ()
@@ -70,9 +72,14 @@ install = readCliOpts >>= \options ->
     
     if skipSetup then return ()
     else do
+      configExists <- FS.isFile $ configFile
+      if configExists
+      then Log.info $ configFile ++ " already exists, will not overwrite."
+      else FS.write configFile configText
+           >> Log.info ("Wrote config to " ++ configFile)
+
       ensure (User.exists user) (User.createSystemUser user runDir) $
         "Failed to create service user: " ++ user
-      configText <- safe $ configTemplate runDir logFile shareDir repoDir keyDir
       FS.touch logFile
       FS.setOwnerAndGroup logFile user user
       FS.setOwnerAndGroup runDir  user user
