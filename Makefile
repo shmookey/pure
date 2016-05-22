@@ -1,10 +1,12 @@
 
-pure:
-	stack setup
+pure: .stack-work
 	mkdir -p build/
 	stack build --copy-bins --local-bin-path build/
 
-install: pure
+.stack-work:
+	stack setup
+
+install:
 	./build/pure-install
 
 clean:
